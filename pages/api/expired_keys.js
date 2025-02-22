@@ -1,10 +1,12 @@
 import admin from 'firebase-admin';
 
-// Initialize Firebase
-const serviceAccount = require('./cred.json'); // Adjust the path
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.credential.cert({
+      project_id: process.env.FIREBASE_PROJECT_ID,
+      private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    }),
   });
 }
 
@@ -14,15 +16,13 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const expiredKeysSnapshot = await db.collection('expired_keys').get();
-      const expiredKeys = [];
-      expiredKeysSnapshot.forEach((doc) => {
-        expiredKeys.push({
-          id: doc.id,
-          ...doc.data(),
-        });
-      });
+      const expiredKeys = expiredKeysSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       res.status(200).json(expiredKeys);
     } catch (err) {
+      console.error('Error fetching data:', err);
       res.status(500).json({ error: 'Failed to fetch expired keys' });
     }
   } else {
