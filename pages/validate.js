@@ -38,7 +38,9 @@ export default function ValidateKey() {
       }
       document.getElementById("my_modal_3").showModal();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to validate key');
+      console.error('Validation Error:', err);
+      const msg = err.response?.data?.error || err.message || 'Failed to validate key';
+      toast.error(msg);
       setResult(null);
       setTimeRemaining(null);
     }
