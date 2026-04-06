@@ -13,7 +13,7 @@ if (!admin.apps.length) {
     token_uri: process.env.FIREBASE_TOKEN_URI,
     auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
     client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-    universe_domain: process.env.FIREBASE_UNIVERSE_DOMAINL,
+    universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN,
   };
 
   admin.initializeApp({
@@ -37,6 +37,9 @@ export default async function handler(req, res) {
       const batch = db.batch(); // Use a batch for atomic operations
       expiredKeysSnapshot.forEach((doc) => {
         const data = doc.data();
+        // Add 24 hours grace period upon restoration 
+        data.expirationDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        
         const keyRef = db.collection('keys').doc(doc.id); // Reference to the active keys collection
         batch.set(keyRef, data); // Add to active keys
         batch.delete(doc.ref); // Remove from expired keys

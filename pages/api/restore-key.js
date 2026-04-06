@@ -13,7 +13,7 @@ if (!admin.apps.length) {
     token_uri: process.env.FIREBASE_TOKEN_URI,
     auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
     client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-    universe_domain: process.env.FIREBASE_UNIVERSE_DOMAINL,
+    universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN,
   };
 
   admin.initializeApp({
@@ -38,6 +38,9 @@ export default async function handler(req, res) {
       }
 
       const data = doc.data();
+      // Add 24 hours grace period upon restoration
+      data.expirationDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      
       await db.collection('keys').doc(key).set(data); // Move back to active keys
       await db.collection('expired_keys').doc(key).delete(); // Remove from expired keys
       res.status(200).json({ message: 'Key restored successfully' });
