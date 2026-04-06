@@ -245,10 +245,63 @@ export default function Dashboard({ isAuthenticated }) {
               </button>
             </div>
 
+
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-max table-auto text-left whitespace-nowrap">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10 hidden sm:table-row">
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Reference Number</th>
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Email</th>
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Service Category</th>
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Expiration Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 block sm:table-row-group">
+                {keys.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate)).slice(0, 5).map((key) => (
+                    <tr key={key.id} className="hover:bg-white/[0.02] transition-colors block sm:table-row border-b sm:border-b-0 border-white/10 mb-4 sm:mb-0">
+                      <td className="p-4 block sm:table-cell">
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Ref:</span>
+                         <span className="font-mono text-xs text-indigo-300 bg-indigo-500/10 py-1.5 px-3 rounded-lg border border-indigo-500/20">{key.id}</span>
+                      </td>
+                      <td className="p-4 block sm:table-cell">
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Email:</span>
+                         <span className="text-gray-300 font-medium">{key.email || key.username}</span>
+                      </td>
+                      <td className="p-4 block sm:table-cell">
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Service:</span>
+                         <span className="text-sm font-semibold bg-white/10 px-3 py-1 rounded-full text-white">{key.serviceCategory}</span>
+                      </td>
+                      <td className="p-4 block sm:table-cell">
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Expires:</span>
+                         <span className="text-gray-400 text-sm">{new Date(key.expirationDate).toLocaleString(undefined, {
+                           year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                         })}</span>
+                      </td>
+                    </tr>
+                  ))}
+                  {keys.length === 0 && (
+                     <tr>
+                        <td colSpan="4" className="p-10 text-center text-gray-500">
+                           <Icon icon="lucide:inbox" className="mx-auto mb-3 opacity-50" width="40" height="40" />
+                           <p>No keys generated recently.</p>
+                        </td>
+                     </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <footer className="py-8 mt-4 border-t border-white/10 text-center text-sm text-gray-500">
+          <p>© {new Date().getFullYear()}, Designed with precision for PC Engineer.</p>
+        </footer>
+      </div>
+
             {/* Custom Modal replacing daisyUI dialog */}
             {isModalOpen && (
               <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-                <div className="glass-card max-w-lg w-full p-8 border border-white/10 relative animate-slide-up bg-background">
+                <div className="glass-card max-w-lg w-full p-8 border border-white/10 relative animate-slide-up bg-[#0b0f19] shadow-2xl">
                   <button 
                     onClick={() => setIsModalOpen(false)} 
                     className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -370,57 +423,6 @@ export default function Dashboard({ isAuthenticated }) {
               </div>
             )}
 
-            <div className="overflow-x-auto w-full">
-              <table className="w-full min-w-max table-auto text-left whitespace-nowrap">
-                <thead>
-                  <tr className="bg-white/5 border-b border-white/10 hidden sm:table-row">
-                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Reference Number</th>
-                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Email</th>
-                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Service Category</th>
-                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Expiration Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 block sm:table-row-group">
-                {keys.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate)).slice(0, 5).map((key) => (
-                    <tr key={key.id} className="hover:bg-white/[0.02] transition-colors block sm:table-row border-b sm:border-b-0 border-white/10 mb-4 sm:mb-0">
-                      <td className="p-4 block sm:table-cell">
-                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Ref:</span>
-                         <span className="font-mono text-xs text-indigo-300 bg-indigo-500/10 py-1.5 px-3 rounded-lg border border-indigo-500/20">{key.id}</span>
-                      </td>
-                      <td className="p-4 block sm:table-cell">
-                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Email:</span>
-                         <span className="text-gray-300 font-medium">{key.email || key.username}</span>
-                      </td>
-                      <td className="p-4 block sm:table-cell">
-                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Service:</span>
-                         <span className="text-sm font-semibold bg-white/10 px-3 py-1 rounded-full text-white">{key.serviceCategory}</span>
-                      </td>
-                      <td className="p-4 block sm:table-cell">
-                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Expires:</span>
-                         <span className="text-gray-400 text-sm">{new Date(key.expirationDate).toLocaleString(undefined, {
-                           year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                         })}</span>
-                      </td>
-                    </tr>
-                  ))}
-                  {keys.length === 0 && (
-                     <tr>
-                        <td colSpan="4" className="p-10 text-center text-gray-500">
-                           <Icon icon="lucide:inbox" className="mx-auto mb-3 opacity-50" width="40" height="40" />
-                           <p>No keys generated recently.</p>
-                        </td>
-                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        
-        <footer className="py-8 mt-4 border-t border-white/10 text-center text-sm text-gray-500">
-          <p>© {new Date().getFullYear()}, Designed with precision for PC Engineer.</p>
-        </footer>
-      </div>
     </div>
   );
 }

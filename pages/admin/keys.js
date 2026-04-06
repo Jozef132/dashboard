@@ -195,7 +195,7 @@ export default function KeysPage({ isAuthenticated }) {
       {/* Info / Edit Modal */}
       {isModalOpen && selectedKey && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="glass-card max-w-lg w-full p-8 border border-white/10 relative animate-slide-up bg-background">
+          <div className="glass-card max-w-lg w-full p-8 border border-white/10 relative animate-slide-up bg-[#0b0f19] shadow-2xl">
             <button 
               onClick={() => setIsModalOpen(false)} 
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
