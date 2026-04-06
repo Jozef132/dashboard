@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 
 // Initialize Firebase
 if (!admin.apps.length) {
@@ -25,25 +26,59 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-  const { username, expirationDate, serviceCategory } = req.body;
+  const { email, password, discordUsername, phoneNumber, expirationDate, serviceCategory } = req.body;
 
-  if (!username || !expirationDate || !serviceCategory) {
-    return res.status(400).json({ error: 'Username, expiration date, and service category are required' });
+  if (!email || !expirationDate || !serviceCategory) {
+    return res.status(400).json({ error: 'Email, expiration date, and service category are required' });
   }
 
   try {
-    const key = uuidv4(); // Generate a random key
+    const referenceNumber = uuidv4(); 
 
-    // Save the key to Firestore
-    await db.collection('keys').doc(key).set({
-      username,
+    // Fetch Discord Webhook URL from settings
+    let webhookUrl = null;
+    const settingsDoc = await db.collection('settings').doc('discord').get();
+    if (settingsDoc.exists && settingsDoc.data().webhookUrl) {
+      webhookUrl = settingsDoc.data().webhookUrl;
+    }
+
+    // Save the subscription to Firestore
+    await db.collection('keys').doc(referenceNumber).set({
+      email,
+      password: password || '',
+      discordUsername: discordUsername || '',
+      phoneNumber: phoneNumber || '',
       serviceCategory,
       valid: true,
-      expirationDate: new Date(expirationDate).toISOString(), // Ensure the date is in ISO format
+      expirationDate: new Date(expirationDate).toISOString(),
     });
 
-    res.status(200).json({ key });
+    if (webhookUrl) {
+      try {
+        await axios.post(webhookUrl, {
+          embeds: [{
+            title: "🎉 New Subscription Created",
+            color: 5763719, // Green
+            fields: [
+              { name: "📋 Reference Number", value: `\`${referenceNumber}\``, inline: false },
+              { name: "📧 Email", value: email || "Unknown", inline: true },
+              { name: "🎮 Discord", value: discordUsername || "None", inline: true },
+              { name: "📞 Phone", value: phoneNumber || "None", inline: true },
+              { name: "📁 Service Category", value: serviceCategory || "Unknown", inline: true }
+            ],
+            footer: {
+              text: "PC Engineer Dashboard"
+            },
+            timestamp: new Date().toISOString()
+          }]
+        });
+      } catch (discordErr) {
+        console.error("Failed to send webhook for new subscription", discordErr.message);
+      }
+    }
+
+    res.status(200).json({ key: referenceNumber });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to generate key' });
+    res.status(500).json({ error: 'Failed to generate subscription' });
   }
 }

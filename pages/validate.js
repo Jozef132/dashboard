@@ -15,7 +15,7 @@ export default function ValidateKey() {
   const handleValidateKey = async (e) => {
     e.preventDefault();
     if (!key) {
-      toast.error('Please enter a key before checking!');
+      toast.error('Please enter a Reference number before checking!');
       return;
     }
     try {
@@ -86,22 +86,22 @@ export default function ValidateKey() {
         <div className="mx-auto flex w-full max-w-md flex-col gap-6">
           <div className="flex flex-col items-center justify-center text-center space-y-2">
             <div className="font-semibold text-3xl">
-              <p>Validate Key</p>
+              <p>Validate Subscription</p>
             </div>
             <div className="flex flex-row text-sm font-medium text-gray-400">
-              <p>Put your key here and know how much time Remaining</p>
+              <p>Put your reference number here to know how much time is Remaining</p>
             </div>
           </div>
           <div>
             <form onSubmit={handleValidateKey}>
               <div className="flex flex-col gap-6">
                 <div className="flex flex-row items-center justify-between mx-auto w-full">
-                  <input className="input !max-w-full !w-[28rem]" type="text" placeholder="Enter your key" value={key} onChange={(e) => setKey(e.target.value)} required/>
+                  <input className="input !max-w-full !w-[28rem]" type="text" placeholder="Enter your reference number" value={key} onChange={(e) => setKey(e.target.value)} required/>
                 </div>
                 <div className="flex flex-col gap-6">
                   <div>
                     <button type="submit" className="flex flex-row items-center justify-center text-center w-full border rounded-xl outline-none py-5 bg-blue-700 border-none text-white text-base font-semibold shadow-sm">
-                      Check Your Key <Icon icon="bxs:key" width="24" height="24" />
+                      Validate Subscription <Icon icon="lucide:user-check" width="24" height="24" />
                     </button>
                   </div>
                   <div className="flex flex-row items-center justify-center text-center text-sm font-medium space-x-1 text-gray-500">
@@ -121,7 +121,7 @@ export default function ValidateKey() {
             <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
           </form>
           <div>
-            <h1 className="tracking-normal font-sans leading-relaxed text-xl font-bold text-gray-800 mb-4">Key Details</h1>
+            <h1 className="tracking-normal font-sans leading-relaxed text-xl font-bold text-gray-800 mb-4">Subscription Details</h1>
             {result && (
               <div>
                 <p>Valid: {result.valid ? 'Yes' : 'No'}</p>

@@ -74,7 +74,7 @@ export default function SettingsPage({ isAuthenticated }) {
              </div>
              
              <p className="text-gray-400 text-sm mb-6 max-w-2xl">
-                When an active key reaches its expiration date, the system can automatically send a notification to a specific Discord channel. Enter your Discord Webhook URL below to enable this feature.
+                When an active subscription is created or reaches its expiration date, the system will automatically send notifications to a specific Discord channel. Enter your Discord Webhook URL below to enable this feature.
              </p>
 
              <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl">

@@ -10,7 +10,10 @@ import "react-toastify/dist/ReactToastify.css";
 import Link from 'next/link';
 
 export default function Dashboard({ isAuthenticated }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [discordUsername, setDiscordUsername] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [timeValue, setTimeValue] = useState(''); // Store the time value (e.g., 1, 2, 3)
   const [timeUnit, setTimeUnit] = useState('days'); // Default unit is days
   const [serviceCategory, setServiceCategory] = useState(''); // Default value
@@ -117,9 +120,9 @@ export default function Dashboard({ isAuthenticated }) {
   const handleGenerateKey = async (e) => {
     e.preventDefault();
   
-    if (!username || !timeValue || !serviceCategory) {
-      setError("All fields are required!");
-      toast.error("All fields are required!", { position: "top-right" });
+    if (!email || !timeValue || !serviceCategory) {
+      setError("Email, Duration, and Service Platform are required!");
+      toast.error("Required fields missing!", { position: "top-right" });
       return;
     }
   
@@ -133,17 +136,27 @@ export default function Dashboard({ isAuthenticated }) {
       }
   
       const response = await axios.post("/api/generate-key", {
-        username,
+        email,
+        password,
+        discordUsername,
+        phoneNumber,
         expirationDate: expirationDate.toISOString(),
         serviceCategory,
       });
   
       setKey(response.data.key);
       setError("");
-      toast.success(`Key Generated: ${response.data.key}`, { position: "top-right", autoClose: false });
+      toast.success(`Subscription Generated! Ref: ${response.data.key}`, { position: "top-right", autoClose: false });
       setIsModalOpen(false); // close modal on success
+      
+      // Reset form
+      setEmail('');
+      setPassword('');
+      setDiscordUsername('');
+      setPhoneNumber('');
+      setTimeValue('');
     } catch (err) {
-      const errorMessage = err.response?.data?.error || "Failed to generate key";
+      const errorMessage = err.response?.data?.error || "Failed to generate subscription";
       setError(errorMessage);
       toast.error(errorMessage, { position: "top-right" });
     }
@@ -169,11 +182,11 @@ export default function Dashboard({ isAuthenticated }) {
             <Link href="/admin/keys">
               <div className="glass-card p-6 flex items-center justify-between group cursor-pointer h-full">
                 <div>
-                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Total Keys</p>
+                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Total Subscriptions</p>
                   <h4 className="text-3xl font-bold text-white group-hover:text-primary-400 transition-colors">{keyCount}</h4>
                 </div>
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary-500/20 to-primary-600/20 border border-primary-500/30 flex items-center justify-center text-primary-400 shadow-[0_0_15px_rgba(99,102,241,0.2)] group-hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] transition-all">
-                  <Icon icon="lucide:key" width="28" height="28" />
+                  <Icon icon="lucide:book-open" width="28" height="28" />
                 </div>
               </div>
             </Link>
@@ -181,11 +194,11 @@ export default function Dashboard({ isAuthenticated }) {
             <Link href="/admin/keys">
               <div className="glass-card p-6 flex items-center justify-between group cursor-pointer h-full">
                 <div>
-                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Active Keys</p>
+                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Active Subs</p>
                   <h4 className="text-3xl font-bold text-white group-hover:text-emerald-400 transition-colors">{activeKeyCount}</h4>
                 </div>
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)] group-hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all">
-                  <Icon icon="lucide:shield-check" width="28" height="28" />
+                  <Icon icon="lucide:user-check" width="28" height="28" />
                 </div>
               </div>
             </Link>
@@ -193,11 +206,11 @@ export default function Dashboard({ isAuthenticated }) {
             <Link href="/admin/expired-keys">
               <div className="glass-card p-6 flex items-center justify-between group cursor-pointer h-full">
                 <div>
-                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Expired Keys</p>
+                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Expired Subs</p>
                   <h4 className="text-3xl font-bold text-white group-hover:text-rose-400 transition-colors">{expiredKeyCount}</h4>
                 </div>
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-500/20 to-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.2)] group-hover:shadow-[0_0_25px_rgba(244,63,94,0.5)] transition-all">
-                  <Icon icon="lucide:shield-alert" width="28" height="28" />
+                  <Icon icon="lucide:user-x" width="28" height="28" />
                 </div>
               </div>
             </Link>
@@ -219,8 +232,8 @@ export default function Dashboard({ isAuthenticated }) {
           <div className="glass-panel rounded-3xl overflow-hidden flex flex-col border border-white/5 shadow-2xl">
             <div className="p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">      
               <div>
-                <h6 className="text-lg font-semibold text-white">Latest Keys generated</h6>
-                <p className="text-sm text-gray-400 mt-1">Overview of the most recently created dashboard keys</p>
+                <h6 className="text-lg font-semibold text-white">Latest Subscriptions</h6>
+                <p className="text-sm text-gray-400 mt-1">Overview of the most recently created subscriptions</p>
               </div>
 
               <button 
@@ -228,7 +241,7 @@ export default function Dashboard({ isAuthenticated }) {
                 className="group relative overflow-hidden bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl py-2.5 px-6 transition-all duration-300 shadow-[0_0_15px_rgba(99,102,241,0.4)] flex items-center gap-2"
               >
                 <Icon icon="lucide:plus" width="20" height="20" />
-                <span>Generate Key</span>
+                <span>Generate Subscription</span>
               </button>
             </div>
 
@@ -243,23 +256,59 @@ export default function Dashboard({ isAuthenticated }) {
                     <Icon icon="lucide:x" width="24" height="24" />
                   </button>
                   
-                  <h2 className="text-2xl font-bold text-white mb-6">Generate New Key</h2>
+                  <h2 className="text-2xl font-bold text-white mb-6">Create Subscription</h2>
                   
-                  <form onSubmit={handleGenerateKey} className="space-y-5">
+                  <form onSubmit={handleGenerateKey} className="space-y-4 max-h-[80vh] overflow-y-auto no-scrollbar pb-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
                         <input
-                          type="text"
+                          type="email"
                           className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                          placeholder="johndoe"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="client@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
                           required
                         />
                       </div>
                       <div>
-                         <label className="block text-sm font-medium text-gray-300 mb-2">Duration</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          placeholder="Password (optional)"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Discord Username</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          placeholder="johndoe#1234"
+                          value={discordUsername}
+                          onChange={(e) => setDiscordUsername(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          placeholder="+1 234..."
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                         <label className="block text-sm font-medium text-gray-300 mb-2">Duration amount</label>
                          <input
                           type="number"
                           className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
@@ -269,7 +318,6 @@ export default function Dashboard({ isAuthenticated }) {
                           required
                         />
                       </div>
-                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Time Unit</label>
@@ -309,11 +357,13 @@ export default function Dashboard({ isAuthenticated }) {
                       </select>
                     </div>
 
+                    </div>
+                    
                     <button
                       className="w-full bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl py-3.5 mt-2 transition-all duration-300 shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] flex justify-center items-center gap-2"
                       type="submit"
                     >
-                      <Icon icon="lucide:key" width="20" height="20" /> Generate 
+                      <Icon icon="lucide:user-plus" width="20" height="20" /> Create Subscription 
                     </button>
                   </form>
                 </div>
@@ -324,8 +374,8 @@ export default function Dashboard({ isAuthenticated }) {
               <table className="w-full min-w-max table-auto text-left whitespace-nowrap">
                 <thead>
                   <tr className="bg-white/5 border-b border-white/10 hidden sm:table-row">
-                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Key Identifier</th>
-                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Username</th>
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Reference Number</th>
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Email</th>
                     <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Service Category</th>
                     <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Expiration Date</th>
                   </tr>
@@ -334,12 +384,12 @@ export default function Dashboard({ isAuthenticated }) {
                 {keys.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate)).slice(0, 5).map((key) => (
                     <tr key={key.id} className="hover:bg-white/[0.02] transition-colors block sm:table-row border-b sm:border-b-0 border-white/10 mb-4 sm:mb-0">
                       <td className="p-4 block sm:table-cell">
-                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Key:</span>
-                         <span className="font-mono text-sm text-indigo-300 bg-indigo-500/10 py-1.5 px-3 rounded-lg border border-indigo-500/20">{key.id}</span>
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Ref:</span>
+                         <span className="font-mono text-xs text-indigo-300 bg-indigo-500/10 py-1.5 px-3 rounded-lg border border-indigo-500/20">{key.id}</span>
                       </td>
                       <td className="p-4 block sm:table-cell">
-                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">User:</span>
-                         <span className="text-gray-300 font-medium">{key.username}</span>
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Email:</span>
+                         <span className="text-gray-300 font-medium">{key.email || key.username}</span>
                       </td>
                       <td className="p-4 block sm:table-cell">
                          <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Service:</span>

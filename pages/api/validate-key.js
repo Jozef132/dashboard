@@ -27,25 +27,25 @@ export default async function handler(req, res) {
   const { key } = req.body;
 
   if (!key) {
-    return res.status(400).json({ error: 'Key is required' });
+    return res.status(400).json({ error: 'Reference Number is required' });
   }
 
   try {
     // Check if the key exists in the expired_keys collection
     const expiredDoc = await db.collection('expired_keys').doc(key).get();
     if (expiredDoc.exists) {
-      return res.status(400).json({ error: 'Key has expired', valid: false });
+      return res.status(400).json({ error: 'Subscription has expired', valid: false });
     }
 
     // Check if the key exists in the keys collection
     const doc = await db.collection('keys').doc(key).get();
     if (!doc.exists) {
-      return res.status(404).json({ error: 'Key not found' });
+      return res.status(404).json({ error: 'Subscription not found' });
     }
 
     const data = doc.data();
     if (!data.valid) {
-      return res.status(400).json({ error: 'Key is invalid' });
+      return res.status(400).json({ error: 'Subscription is invalid' });
     }
 
     const expirationDate = new Date(data.expirationDate);
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
       // Move the key to the expired_keys collection
       await db.collection('expired_keys').doc(key).set(data);
       await db.collection('keys').doc(key).delete(); // Remove from the active keys collection
-      return res.status(400).json({ error: 'Key has expired', valid: false });
+      return res.status(400).json({ error: 'Subscription has expired', valid: false });
     }
 
     // Convert time remaining to days, hours, minutes, and seconds

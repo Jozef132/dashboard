@@ -57,11 +57,13 @@ export default async function handler(req, res) {
           try {
             await axios.post(webhookUrl, {
               embeds: [{
-                title: "⚠️ Key Expired",
+                title: "⚠️ Subscription Expired",
                 color: 15548997, // Red color
                 fields: [
-                  { name: "🔑 Key ID", value: `\`${doc.id}\``, inline: false },
-                  { name: "👤 Username", value: data.username || "Unknown", inline: true },
+                  { name: "🔑 Reference Number", value: `\`${doc.id}\``, inline: false },
+                  { name: "📧 Email", value: data.email || "Unknown", inline: true },
+                  { name: "🎮 Discord", value: data.discordUsername || "None", inline: true },
+                  { name: "📞 Phone", value: data.phoneNumber || "None", inline: true },
                   { name: "📁 Service Category", value: data.serviceCategory || "Unknown", inline: true }
                 ],
                 footer: {

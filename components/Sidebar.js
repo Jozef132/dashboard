@@ -11,8 +11,8 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: 'ic:round-space-dashboard' },
-    { name: 'Manage Keys', path: '/admin/keys', icon: 'lucide:key' },
-    { name: 'Expired Keys', path: '/admin/expired-keys', icon: 'lucide:key-square' },
+    { name: 'Manage Subscriptions', path: '/admin/keys', icon: 'lucide:users' },
+    { name: 'Expired Subscriptions', path: '/admin/expired-keys', icon: 'lucide:user-x' },
     { name: 'Manage Services', path: '/admin/add-service', icon: 'lucide:briefcase' },
     { name: 'Settings', path: '/admin/settings', icon: 'lucide:settings' }
   ];

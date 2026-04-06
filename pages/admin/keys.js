@@ -97,9 +97,9 @@ export default function KeysPage({ isAuthenticated }) {
           <div className="p-6 border-b border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <p className="text-xl font-bold leading-normal text-white">
-                Manage Keys
+                Manage Subscriptions
               </p>
-              <p className="text-sm text-gray-400 mt-1">View, edit, and delete active keys</p>
+              <p className="text-sm text-gray-400 mt-1">View, edit, and delete active subscriptions</p>
             </div>
             <div className="flex items-center gap-4 w-full md:w-auto">
               <div className="flex bg-white/5 border border-white/10 rounded-xl px-4 py-2 items-center text-sm">
@@ -133,8 +133,8 @@ export default function KeysPage({ isAuthenticated }) {
             <table className="w-full min-w-max table-auto text-left whitespace-nowrap">
               <thead>
                 <tr className="bg-white/5 border-b border-white/10">
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Key</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Username</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Reference Number</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Email</th>
                   <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Service Category</th>
                   <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Expiration Date</th>
                   <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400 text-center">Actions</th>
@@ -144,10 +144,10 @@ export default function KeysPage({ isAuthenticated }) {
                 {filteredKeys.map((key) => (
                   <tr key={key.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="p-4">
-                      <span className="font-mono text-sm text-indigo-300 bg-indigo-500/10 py-1.5 px-3 rounded-lg border border-indigo-500/20">{key.id}</span>
+                      <span className="font-mono text-xs text-indigo-300 bg-indigo-500/10 py-1.5 px-3 rounded-lg border border-indigo-500/20">{key.id}</span>
                     </td>
                     <td className="p-4">
-                      <span className="text-gray-300 font-medium">{key.username}</span>
+                      <span className="text-gray-300 font-medium">{key.email || key.username || 'N/A'}</span>
                     </td>
                     <td className="p-4">
                       <span className="text-sm font-semibold bg-white/10 px-3 py-1 rounded-full text-white">{key.serviceCategory}</span>
@@ -202,12 +202,12 @@ export default function KeysPage({ isAuthenticated }) {
             >
               <Icon icon="lucide:x" width="24" height="24" />
             </button>
-            <h2 className="text-2xl font-bold text-white mb-6">Key Details</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Subscription Details</h2>
             
             <div className="space-y-4 mb-6 text-gray-300">
               <div className="flex flex-col border-b border-white/5 pb-3">
-                <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Key ID</span>
-                <span className="font-mono text-primary-400">{selectedKey.id}</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Reference Number</span>
+                <span className="font-mono text-primary-400 text-sm">{selectedKey.id}</span>
               </div>
               <div className="flex flex-col border-b border-white/5 pb-3">
                 <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Current Expiration</span>
@@ -217,15 +217,48 @@ export default function KeysPage({ isAuthenticated }) {
 
             {editMode ? (
               <div className="space-y-4 flex flex-col mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Username</label>
-                  <input
-                    type="text"
-                    value={editData.username !== undefined ? editData.username : selectedKey.username}
-                    onChange={(e) => setEditData({ ...editData, username: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-white focus:ring-2 focus:ring-primary-500 transition-all"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={editData.email !== undefined ? editData.email : (selectedKey.email || selectedKey.username || '')}
+                      onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-white focus:ring-2 focus:ring-primary-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Password</label>
+                    <input
+                      type="text"
+                      value={editData.password !== undefined ? editData.password : (selectedKey.password || '')}
+                      onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-white focus:ring-2 focus:ring-primary-500 transition-all"
+                    />
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Discord Username</label>
+                    <input
+                      type="text"
+                      value={editData.discordUsername !== undefined ? editData.discordUsername : (selectedKey.discordUsername || '')}
+                      onChange={(e) => setEditData({ ...editData, discordUsername: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-white focus:ring-2 focus:ring-primary-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Phone Number</label>
+                    <input
+                      type="text"
+                      value={editData.phoneNumber !== undefined ? editData.phoneNumber : (selectedKey.phoneNumber || '')}
+                      onChange={(e) => setEditData({ ...editData, phoneNumber: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-white focus:ring-2 focus:ring-primary-500 transition-all"
+                    />
+                  </div>
+                </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">Add Days to Expiration</label>
                   <input
@@ -270,7 +303,7 @@ export default function KeysPage({ isAuthenticated }) {
                 onClick={() => setEditMode(true)}
                 className="w-full py-3 px-4 bg-primary-600/20 border border-primary-500/30 text-primary-400 font-bold rounded-xl hover:bg-primary-500 hover:text-white transition-all flex justify-center items-center gap-2 mt-4"
               >
-                <Icon icon="lucide:pencil" width="18" height="18" /> Edit Key
+                <Icon icon="lucide:pencil" width="18" height="18" /> Edit Subscription
               </button>
             )}
           </div>

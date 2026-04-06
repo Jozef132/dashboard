@@ -115,9 +115,9 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
           <div className="p-6 border-b border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <p className="text-xl font-bold leading-normal text-white">
-                Expired Keys
+                Expired Subscriptions
               </p>
-              <p className="text-sm text-gray-400 mt-1">Manage or permanently delete expired keys</p>
+              <p className="text-sm text-gray-400 mt-1">Manage or permanently delete expired subscriptions</p>
             </div>
             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
               <div className="flex bg-white/5 border border-white/10 rounded-xl px-4 py-2 items-center text-sm">
@@ -159,8 +159,8 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
             <table className="w-full min-w-max table-auto text-left whitespace-nowrap">
               <thead>
                 <tr className="bg-white/5 border-b border-white/10">
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Key</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Username</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Reference Number</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Email</th>
                   <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Service Category</th>
                   <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Expiration Date</th>
                   <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400 text-center">Actions</th>
@@ -170,10 +170,10 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
                 {filteredKeys.map((key) => (
                   <tr key={key.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="p-4">
-                      <span className="font-mono text-sm text-rose-300 bg-rose-500/10 py-1.5 px-3 rounded-lg border border-rose-500/20">{key.id}</span>
+                      <span className="font-mono text-xs text-rose-300 bg-rose-500/10 py-1.5 px-3 rounded-lg border border-rose-500/20">{key.id}</span>
                     </td>
                     <td className="p-4">
-                      <span className="text-gray-300 font-medium">{key.username}</span>
+                      <span className="text-gray-300 font-medium">{key.email || key.username || 'N/A'}</span>
                     </td>
                     <td className="p-4">
                       <span className="text-sm font-semibold bg-white/10 px-3 py-1 rounded-full text-white">{key.serviceCategory}</span>
@@ -207,7 +207,7 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
                   <tr>
                     <td colSpan="5" className="p-10 text-center text-gray-500">
                       <Icon icon="lucide:inbox" className="mx-auto mb-3 opacity-50" width="40" height="40" />
-                      <p>No expired keys found.</p>
+                      <p>No expired subscriptions found.</p>
                     </td>
                   </tr>
                 )}
