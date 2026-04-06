@@ -1,4 +1,5 @@
 import admin from 'firebase-admin';
+import axios from 'axios';
 
 // Initialize Firebase
 if (!admin.apps.length) {
@@ -6,7 +7,7 @@ if (!admin.apps.length) {
     type: process.env.FIREBASE_TYPE,
     project_id: process.env.FIREBASE_PROJECT_ID,
     private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-    private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
     client_email: process.env.FIREBASE_CLIENT_EMAIL,
     client_id: process.env.FIREBASE_CLIENT_ID,
     auth_uri: process.env.FIREBASE_AUTH_URI,
@@ -30,6 +31,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: 'No active keys found' });
     }
 
+    // Fetch Discord Webhook URL from settings
+    let webhookUrl = null;
+    const settingsDoc = await db.collection('settings').doc('discord').get();
+    if (settingsDoc.exists && settingsDoc.data().webhookUrl) {
+      webhookUrl = settingsDoc.data().webhookUrl;
+    }
+
     const now = new Date();
     let updatedKeys = [];
 
@@ -42,7 +50,30 @@ export default async function handler(req, res) {
         await db.collection('expired_keys').doc(doc.id).set(data);
         await db.collection('keys').doc(doc.id).delete(); // Remove from active keys
 
-        updatedKeys.push({ key: doc.id, status: 'expired' });
+        updatedKeys.push({ key: doc.id, ...data });
+
+        // Send to Discord if webhook exists
+        if (webhookUrl) {
+          try {
+            await axios.post(webhookUrl, {
+              embeds: [{
+                title: "⚠️ Key Expired",
+                color: 15548997, // Red color
+                fields: [
+                  { name: "🔑 Key ID", value: `\`${doc.id}\``, inline: false },
+                  { name: "👤 Username", value: data.username || "Unknown", inline: true },
+                  { name: "📁 Service Category", value: data.serviceCategory || "Unknown", inline: true }
+                ],
+                footer: {
+                  text: "PC Engineer Dashboard"
+                },
+                timestamp: new Date().toISOString()
+              }]
+            });
+          } catch (discordErr) {
+            console.error("Failed to send webhook for key", doc.id, discordErr.message);
+          }
+        }
       }
     }
 

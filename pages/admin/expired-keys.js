@@ -14,11 +14,8 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
   const [filterCategory, setFilterCategory] = useState("all");
   const router = useRouter();
 
-  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/");
-    }
+    if (!isAuthenticated) router.push("/");
   }, [isAuthenticated, router]);
 
   useEffect(() => {
@@ -45,14 +42,11 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
     fetchExpiredKeys();
   }, []);
 
-  const filteredKeys =
-    filterCategory === "all"
-      ? expiredKeys
-      : expiredKeys.filter(
-          (key) =>
-            key.serviceCategory.trim().toLowerCase() ===
-            filterCategory.trim().toLowerCase()
-        );
+  const filteredKeys = filterCategory === "all"
+    ? expiredKeys
+    : expiredKeys.filter(
+        (key) => key.serviceCategory.trim().toLowerCase() === filterCategory.trim().toLowerCase()
+      );
 
   const refreshKeys = async () => {
     try {
@@ -74,6 +68,7 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
   };
 
   const handleDeleteKey = async (keyId) => {
+    if(!window.confirm("Delete this key permanently?")) return;
     try {
       await axios.delete("/api/delete-expired-key", { data: { key: keyId } });
       toast.success("Key deleted successfully", { position: "top-right" });
@@ -94,6 +89,7 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
   };
 
   const handleDeleteAllKeys = async () => {
+    if(!window.confirm("Delete all expired keys permanently?")) return;
     try {
       await axios.delete("/api/delete-all-expired-keys");
       toast.success("All keys deleted successfully", { position: "top-right" });
@@ -103,111 +99,120 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
     }
   };
 
-  if (!isAuthenticated) {
-    return null; // or a loading spinner
-  }
+  if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <ToastContainer />
+    <div className="min-h-screen bg-background relative overflow-hidden font-sans">
+      <div className="blob bg-primary-500 w-96 h-96 top-0 left-10"></div>
+      <div className="blob bg-rose-500 w-96 h-96 bottom-0 right-10 animation-delay-2000"></div>
+
+      <ToastContainer theme="dark" toastClassName="glass-panel" />
       <Sidebar />
-      <div className="p-4 xl:ml-80">
+      
+      <div className="p-4 xl:ml-[310px] relative z-10 transition-all duration-300">
         <Nav />
-        <div className="w-full bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
-          <div className="px-4 md:px-10 pt-4 md:pt-7">
-            <div className="flex items-center justify-between">
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold leading-normal text-gray-800">
+        <div className="glass-panel rounded-3xl mt-8 border border-white/5 shadow-2xl flex flex-col">
+          <div className="p-6 border-b border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <p className="text-xl font-bold leading-normal text-white">
                 Expired Keys
               </p>
-              <div className="py-3 px-4 flex items-center text-sm font-medium leading-none text-gray-600 bg-gray-200 hover:bg-gray-300 cursor-pointer rounded">
-                <p>Filter:</p>
+              <p className="text-sm text-gray-400 mt-1">Manage or permanently delete expired keys</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+              <div className="flex bg-white/5 border border-white/10 rounded-xl px-4 py-2 items-center text-sm">
+                <span className="text-gray-400 mr-2">Filter:</span>
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className="focus:text-indigo-600 focus:outline-none bg-transparent ml-1"
+                  className="bg-transparent text-white focus:outline-none appearance-none font-semibold"
                 >
-                  <option value="all">All</option>
+                  <option value="all" className="bg-[#1e2532]">All Services</option>
                   {services.map((service) => (
-                    <option key={service.id} value={service.id}>
-                      {service.id}
+                    <option key={service.id} value={service.name} className="bg-[#1e2532]">
+                       {service.name}
                     </option>
                   ))}
                 </select>
+                <Icon icon="lucide:chevron-down" className="ml-2 text-gray-400 pointer-events-none" />
               </div>
+
+              <button
+                className="group flex items-center gap-2 py-2.5 px-4 text-sm font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl hover:bg-emerald-500 hover:text-white transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] whitespace-nowrap"
+                onClick={handleRestoreAllKeys}
+              >
+                <Icon icon="lucide:refresh-cw" width="18" height="18" /> 
+                <span className="hidden sm:inline">Restore All</span>
+              </button>
+
+              <button
+                className="group flex items-center gap-2 py-2.5 px-4 text-sm font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl hover:bg-rose-500 hover:text-white transition-all duration-300 shadow-[0_0_15px_rgba(244,63,94,0.1)] hover:shadow-[0_0_20px_rgba(244,63,94,0.4)] whitespace-nowrap"
+                onClick={handleDeleteAllKeys}
+              >
+                <Icon icon="lucide:trash-2" width="18" height="18" /> 
+                <span className="hidden sm:inline">Delete All</span>
+              </button>
             </div>
           </div>
-          <div className="bg-white py-4 md:py-7 rounded-xl">
-            <div className="mt-7 overflow-x-auto">
-              <div className="flex justify-end mb-4 mx-3">
-                <button
-                  className="py-3 px-3 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 flex items-center duration-200 gap-1 h-[45px]"
-                  onClick={handleRestoreAllKeys}
-                >
-                  <Icon icon="tabler:restore" width="20" height="20" /> Restore All
-                </button>
-                <button
-                  className="ml-2 py-3 px-3 text-sm text-red-700 bg-red-100 rounded hover:bg-red-200 flex items-center duration-200 h-[45px]"
-                  onClick={handleDeleteAllKeys}
-                >
-                  <Icon icon="material-symbols-light:delete-rounded" width="24" height="24" /> Delete All
-                </button>
-              </div>
-              <table className="w-full whitespace-nowrap">
-                <thead>
-                  <tr>
-                    <th>Key</th>
-                    <th>Username</th>
-                    <th>Service Category</th>
-                    <th>Expiration Date</th>
-                    <th>Actions</th>
+
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-max table-auto text-left whitespace-nowrap">
+              <thead>
+                <tr className="bg-white/5 border-b border-white/10">
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Key</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Username</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Service Category</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Expiration Date</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filteredKeys.map((key) => (
+                  <tr key={key.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4">
+                      <span className="font-mono text-sm text-rose-300 bg-rose-500/10 py-1.5 px-3 rounded-lg border border-rose-500/20">{key.id}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-300 font-medium">{key.username}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-sm font-semibold bg-white/10 px-3 py-1 rounded-full text-white">{key.serviceCategory}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-400 text-sm">{new Date(key.expirationDate).toLocaleString(undefined, {
+                           year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                         })}</span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 p-2 rounded-lg transition-colors"
+                          onClick={() => handleRestoreKey(key.id)}
+                          title="Restore"
+                        >
+                          <Icon icon="lucide:refresh-ccw" width="18" height="18" />
+                        </button>
+                        <button
+                          className="bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/20 p-2 rounded-lg transition-colors"
+                          onClick={() => handleDeleteKey(key.id)}
+                          title="Delete"
+                        >
+                          <Icon icon="lucide:trash" width="18" height="18" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredKeys.map((key) => (
-                    <tr key={key.id} className="h-16 border border-gray-100 rounded">
-                      <td>
-                        <div className="flex items-center pl-5">
-                          <p className="text-base font-medium text-gray-700">{key.id}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center pl-5">
-                          <p className="text-base font-medium text-gray-700">{key.username}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center pl-5">
-                          <p className="text-base font-medium text-gray-700">{key.serviceCategory}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center pl-5">
-                          <p className="text-base font-medium text-gray-700">
-                            {new Date(key.expirationDate).toLocaleString()}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="pl-5">
-                        <div className="flex items-center justify-center">
-                          <button
-                            className="py-3 px-3 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 flex items-center duration-200 gap-1 h-[45px]"
-                            onClick={() => handleRestoreKey(key.id)}
-                          >
-                            <Icon icon="tabler:restore" width="20" height="20" /> Restore
-                          </button>
-                          <button
-                            className="ml-2 py-3 px-3 text-sm text-red-700 bg-red-100 rounded hover:bg-red-200 flex items-center duration-200 h-[45px]"
-                            onClick={() => handleDeleteKey(key.id)}
-                          >
-                            <Icon icon="material-symbols-light:delete-rounded" width="24" height="24" /> Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+                {filteredKeys.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="p-10 text-center text-gray-500">
+                      <Icon icon="lucide:inbox" className="mx-auto mb-3 opacity-50" width="40" height="40" />
+                      <p>No expired keys found.</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -217,20 +222,16 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
 
 export async function getServerSideProps(context) {
   const { req } = context;
-  const isLoggedIn = req.cookies.isLoggedIn; // Check if the user is logged in
+  const isLoggedIn = req.cookies.isLoggedIn; 
 
   if (!isLoggedIn) {
     return {
       redirect: {
-        destination: "/", // Redirect to login page if not logged in
+        destination: "/", 
         permanent: false,
       },
     };
   }
 
-  return {
-    props: {
-      isAuthenticated: true,
-    },
-  };
+  return { props: { isAuthenticated: true } };
 }

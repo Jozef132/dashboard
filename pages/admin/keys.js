@@ -15,13 +15,11 @@ export default function KeysPage({ isAuthenticated }) {
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState({});
   const [filterCategory, setFilterCategory] = useState('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
-  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/');
-    }
+    if (!isAuthenticated) router.push('/');
   }, [isAuthenticated, router]);
 
   useEffect(() => {
@@ -38,17 +36,18 @@ export default function KeysPage({ isAuthenticated }) {
     fetchData();
   }, []);
 
-  const filteredKeys =
-    filterCategory === 'all'
-      ? keys
-      : keys.filter((key) => key.serviceCategory === filterCategory);
+  const filteredKeys = filterCategory === 'all'
+    ? keys
+    : keys.filter((key) => key.serviceCategory === filterCategory);
 
   const handleViewDetails = (key) => {
     setSelectedKey(key);
     setEditMode(false);
+    setIsModalOpen(true);
   };
 
   const handleDeleteAllKeys = async () => {
+    if(!window.confirm("Are you sure you want to delete all keys?")) return;
     try {
       await axios.delete('/api/delete-all-keys');
       toast.success('All keys deleted successfully', { position: 'top-right' });
@@ -63,6 +62,7 @@ export default function KeysPage({ isAuthenticated }) {
       await axios.put('/api/edit-key', { id: selectedKey.id, ...editData });
       toast.success('Key updated successfully', { position: 'top-right' });
       setEditMode(false);
+      setIsModalOpen(false);
       router.reload();
     } catch (err) {
       toast.error('Failed to update key', { position: 'top-right' });
@@ -70,6 +70,7 @@ export default function KeysPage({ isAuthenticated }) {
   };
 
   const handleDelete = async (id) => {
+    if(!window.confirm("Delete this key?")) return;
     try {
       await axios.delete('/api/delete-key', { data: { id } });
       toast.success('Key deleted successfully', { position: 'top-right' });
@@ -79,37 +80,169 @@ export default function KeysPage({ isAuthenticated }) {
     }
   };
 
-  if (!isAuthenticated) {
-    return null; // or a loading spinner
-  }
+  if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <ToastContainer />
+    <div className="min-h-screen bg-background relative overflow-hidden font-sans">
+      {/* Background blobs */}
+      <div className="blob bg-primary-500 w-96 h-96 top-0 left-10"></div>
+      <div className="blob bg-purple-500 w-96 h-96 bottom-0 right-10 animation-delay-2000"></div>
+
+      <ToastContainer theme="dark" toastClassName="glass-panel" />
       <Sidebar />
-      <div className="p-4 xl:ml-80">
+      
+      <div className="p-4 xl:ml-[310px] relative z-10 transition-all duration-300">
         <Nav />
-        <div className="w-full bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
-          <div className="px-4 md:px-10 pt-4 md:pt-7">
-            <div className="flex items-center justify-between">
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold leading-normal text-gray-800">
+        <div className="glass-panel rounded-3xl mt-8 border border-white/5 shadow-2xl flex flex-col">
+          <div className="p-6 border-b border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <p className="text-xl font-bold leading-normal text-white">
                 Manage Keys
               </p>
-              <div className="flex justify-end mb-4 mx-3 gap-5">
-                <button
-                  className="ml-2 py-3 px-3 text-sm text-red-700 bg-red-100 rounded hover:bg-red-200 flex items-center duration-200 h-[45px]"
-                  onClick={handleDeleteAllKeys}
+              <p className="text-sm text-gray-400 mt-1">View, edit, and delete active keys</p>
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="flex bg-white/5 border border-white/10 rounded-xl px-4 py-2 items-center text-sm">
+                <span className="text-gray-400 mr-2">Filter:</span>
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="bg-transparent text-white focus:outline-none appearance-none font-semibold"
                 >
-                  <Icon icon="material-symbols-light:delete-rounded" width="24" height="24" /> Delete All
-                </button>
-                <div className="py-3 px-4 flex items-center text-sm font-medium leading-none text-gray-600 bg-gray-200 hover:bg-gray-300 cursor-pointer rounded">
-                  <p>Filter:</p>
+                  <option value="all" className="bg-[#1e2532]">All Services</option>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.name} className="bg-[#1e2532]">
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+                <Icon icon="lucide:chevron-down" className="ml-2 text-gray-400 pointer-events-none" />
+              </div>
+              
+              <button
+                className="group flex items-center gap-2 py-2.5 px-4 text-sm font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl hover:bg-rose-500 hover:text-white transition-all duration-300 shadow-[0_0_15px_rgba(244,63,94,0.1)] hover:shadow-[0_0_20px_rgba(244,63,94,0.4)] whitespace-nowrap"
+                onClick={handleDeleteAllKeys}
+              >
+                <Icon icon="lucide:trash-2" width="18" height="18" /> 
+                <span className="hidden sm:inline">Delete All</span>
+              </button>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-max table-auto text-left whitespace-nowrap">
+              <thead>
+                <tr className="bg-white/5 border-b border-white/10">
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Key</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Username</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Service Category</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Expiration Date</th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filteredKeys.map((key) => (
+                  <tr key={key.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="p-4">
+                      <span className="font-mono text-sm text-indigo-300 bg-indigo-500/10 py-1.5 px-3 rounded-lg border border-indigo-500/20">{key.id}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-300 font-medium">{key.username}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-sm font-semibold bg-white/10 px-3 py-1 rounded-full text-white">{key.serviceCategory}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-400 text-sm">{new Date(key.expirationDate).toLocaleString(undefined, {
+                           year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                         })}</span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                           className="bg-primary-500/20 text-primary-400 hover:bg-primary-500 hover:text-white border border-primary-500/30 p-2 rounded-lg transition-colors" 
+                           onClick={() => handleViewDetails(key)}
+                           title="Info/Edit"
+                        >
+                          <Icon icon="lucide:info" width="18" height="18" />
+                        </button>
+
+                        <button
+                          className="bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/20 p-2 rounded-lg transition-colors"
+                          onClick={() => handleDelete(key.id)}
+                          title="Delete"
+                        >
+                          <Icon icon="lucide:trash" width="18" height="18" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredKeys.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="p-10 text-center text-gray-500">
+                      <Icon icon="lucide:inbox" className="mx-auto mb-3 opacity-50" width="40" height="40" />
+                      <p>No keys found.</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Info / Edit Modal */}
+      {isModalOpen && selectedKey && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="glass-card max-w-lg w-full p-8 border border-white/10 relative animate-slide-up bg-background">
+            <button 
+              onClick={() => setIsModalOpen(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <Icon icon="lucide:x" width="24" height="24" />
+            </button>
+            <h2 className="text-2xl font-bold text-white mb-6">Key Details</h2>
+            
+            <div className="space-y-4 mb-6 text-gray-300">
+              <div className="flex flex-col border-b border-white/5 pb-3">
+                <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Key ID</span>
+                <span className="font-mono text-primary-400">{selectedKey.id}</span>
+              </div>
+              <div className="flex flex-col border-b border-white/5 pb-3">
+                <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Current Expiration</span>
+                <span>{new Date(selectedKey.expirationDate).toLocaleString()}</span>
+              </div>
+            </div>
+
+            {editMode ? (
+              <div className="space-y-4 flex flex-col mt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Username</label>
+                  <input
+                    type="text"
+                    value={editData.username !== undefined ? editData.username : selectedKey.username}
+                    onChange={(e) => setEditData({ ...editData, username: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-white focus:ring-2 focus:ring-primary-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Add Days to Expiration</label>
+                  <input
+                    type="number"
+                    placeholder="Days (optional)"
+                    value={editData.days || ''}
+                    onChange={(e) => setEditData({ ...editData, days: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-white focus:ring-2 focus:ring-primary-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Service Category</label>
                   <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="focus:text-indigo-600 focus:outline-none bg-transparent ml-1"
+                    value={editData.serviceCategory || selectedKey.serviceCategory}
+                    onChange={(e) => setEditData({ ...editData, serviceCategory: e.target.value })}
+                    className="w-full bg-[#1e2532] border border-white/10 rounded-xl py-2 px-3 text-white focus:ring-2 focus:ring-primary-500 transition-all appearance-none"
                   >
-                    <option value="all">All</option>
                     {services.map((service) => (
                       <option key={service.id} value={service.name}>
                         {service.name}
@@ -117,164 +250,48 @@ export default function KeysPage({ isAuthenticated }) {
                     ))}
                   </select>
                 </div>
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={handleEdit}
+                    className="flex-1 py-2.5 px-4 bg-primary-600 font-semibold text-white rounded-xl hover:bg-primary-500 transition-colors shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={() => setEditMode(false)}
+                    className="flex-1 py-2.5 px-4 bg-white/5 border border-white/10 font-semibold text-white rounded-xl hover:bg-white/10 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="bg-white py-4 md:py-7 rounded-xl">
-            <div className="mt-7 overflow-x-auto">
-              <table className="w-full whitespace-nowrap">
-                <thead>
-                  <tr>
-                    <th>Key</th>
-                    <th>Username</th>
-                    <th>Service Category</th>
-                    <th>Expiration Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredKeys.map((key) => (
-                    <tr key={key.id} className="h-16 border border-gray-100 rounded">
-                      <td>
-                        <div className="flex items-center pl-5">
-                          <p className="text-base font-medium text-gray-700">{key.id}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center pl-5">
-                          <p className="text-base font-medium text-gray-700">{key.username}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center pl-5">
-                          <p className="text-base font-medium text-gray-700">{key.serviceCategory}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center pl-5">
-                          <p className="text-base font-medium text-gray-700">
-                            {new Date(key.expirationDate).toLocaleString()}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="pl-5">
-                        <div className="flex items-center justify-center">
-                          <button className="btn" onClick={() => {handleViewDetails(key); document.getElementById("my_modal_3").showModal();}}>
-                            <Icon icon="tabler:info-circle" width="20" height="20" /> Info
-                          </button>
-
-                          <dialog id="my_modal_3" className="modal">
-                            <div className="modal-box">
-                              <form method="dialog">
-                                <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                                  ✕
-                                </button>
-                              </form>
-                              <div>
-                                <h1 className="tracking-normal font-sans  leading-relaxed text-xl font-bold text-gray-800 mb-4">
-                                  Key Details
-                                </h1>
-
-                                {selectedKey && (
-                                  <div>
-                                    <div className="space-y-4">
-                                      <p><strong>Key:</strong> {selectedKey.id}</p>
-                                      <p><strong>Username:</strong> {selectedKey.username}</p>
-                                      <p><strong>Service Category:</strong> {selectedKey.serviceCategory}</p>
-                                      <p><strong>Expiration Date:</strong> {new Date(selectedKey.expirationDate).toLocaleString()}</p>
-
-                                      {editMode ? (
-                                        <div className="space-y-4 flex flex-col">
-                                          <input
-                                            type="text"
-                                            placeholder="Username"
-                                            value={editData.username || selectedKey.username}
-                                            onChange={(e) => setEditData({ ...editData, username: e.target.value })}
-                                            className="w-full p-2 border border-gray-300 rounded"
-                                          />
-                                          <input
-                                            type="number"
-                                            placeholder="Days"
-                                            value={editData.days || ''}
-                                            onChange={(e) => setEditData({ ...editData, days: e.target.value })}
-                                            className="w-full p-2 border border-gray-300 rounded"
-                                          />
-                                          <select
-                                            value={editData.serviceCategory || selectedKey.serviceCategory}
-                                            onChange={(e) => setEditData({ ...editData, serviceCategory: e.target.value })}
-                                            className="w-full p-2 border border-gray-300 rounded"
-                                          >
-                                            {services.map((service) => (
-                                              <option key={service.id} value={service.name}>
-                                                {service.name}
-                                              </option>
-                                            ))}
-                                          </select>
-                                          <div className="flex gap-2">
-                                            <button
-                                              onClick={handleEdit}
-                                              className="py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                                            >
-                                              Save
-                                            </button>
-                                            <button
-                                              onClick={() => setEditMode(false)}
-                                              className="py-2 px-4 bg-gray-600 text-white rounded hover:bg-gray-700"
-                                            >
-                                              Cancel
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <button
-                                          onClick={() => setEditMode(true)}
-                                          className="py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                                        >
-                                          Edit
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </dialog>
-                          <button
-                            className="ml-2 py-3 px-3 text-sm text-red-700 bg-red-100 rounded hover:bg-red-200 flex items-center duration-200 h-[45px]"
-                            onClick={() => handleDelete(key.id)}
-                          >
-                            <Icon icon="material-symbols-light:delete-rounded" width="24" height="24" /> Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            ) : (
+              <button
+                onClick={() => setEditMode(true)}
+                className="w-full py-3 px-4 bg-primary-600/20 border border-primary-500/30 text-primary-400 font-bold rounded-xl hover:bg-primary-500 hover:text-white transition-all flex justify-center items-center gap-2 mt-4"
+              >
+                <Icon icon="lucide:pencil" width="18" height="18" /> Edit Key
+              </button>
+            )}
           </div>
         </div>
-      </div>
+      )}
+
     </div>
   );
 }
 
 export async function getServerSideProps(context) {
   const { req } = context;
-  const isLoggedIn = req.cookies.isLoggedIn; // Check if the user is logged in
+  const isLoggedIn = req.cookies.isLoggedIn; 
 
   if (!isLoggedIn) {
     return {
       redirect: {
-        destination: '/', // Redirect to login page if not logged in
+        destination: '/', 
         permanent: false,
       },
     };
   }
-
-  return {
-    props: {
-      isAuthenticated: true,
-    },
-  };
+  return { props: { isAuthenticated: true } };
 }

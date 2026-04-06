@@ -1,7 +1,5 @@
 import admin from 'firebase-admin';
-import { v4 as uuidv4 } from 'uuid';
 
-// Initialize Firebase
 if (!admin.apps.length) {
   const serviceAccount = {
     type: process.env.FIREBASE_TYPE,
@@ -25,25 +23,27 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-  const { username, expirationDate, serviceCategory } = req.body;
-
-  if (!username || !expirationDate || !serviceCategory) {
-    return res.status(400).json({ error: 'Username, expiration date, and service category are required' });
-  }
-
-  try {
-    const key = uuidv4(); // Generate a random key
-
-    // Save the key to Firestore
-    await db.collection('keys').doc(key).set({
-      username,
-      serviceCategory,
-      valid: true,
-      expirationDate: new Date(expirationDate).toISOString(), // Ensure the date is in ISO format
-    });
-
-    res.status(200).json({ key });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to generate key' });
+  if (req.method === 'GET') {
+    try {
+      const doc = await db.collection('settings').doc('discord').get();
+      if (!doc.exists) {
+        return res.status(200).json({ webhookUrl: '' });
+      }
+      return res.status(200).json(doc.data());
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+  } else if (req.method === 'POST') {
+    try {
+      const { webhookUrl } = req.body;
+      await db.collection('settings').doc('discord').set({ webhookUrl }, { merge: true });
+      return res.status(200).json({ message: 'Settings saved successfully' });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to save settings' });
+    }
+  } else {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 }

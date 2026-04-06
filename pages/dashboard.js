@@ -9,7 +9,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Link from 'next/link';
 
-
 export default function Dashboard({ isAuthenticated }) {
   const [username, setUsername] = useState('');
   const [timeValue, setTimeValue] = useState(''); // Store the time value (e.g., 1, 2, 3)
@@ -23,6 +22,7 @@ export default function Dashboard({ isAuthenticated }) {
   const [activeKeyCount, setActiveKeyCount] = useState(0);
   const [totalServices, setTotalServices] = useState(0);
   const [keys, setKeys] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
   // Redirect to login if not authenticated
@@ -31,42 +31,39 @@ export default function Dashboard({ isAuthenticated }) {
       router.push('/');
     }
   }, [isAuthenticated, router]);
-    // Fetch all keys and services
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const keysResponse = await axios.get('/api/keys');
-          const servicesResponse = await axios.get('/api/services');
-          setKeys(keysResponse.data);
-          setServices(servicesResponse.data);
-        } catch (err) {
-          console.error('Failed to fetch data:', err);
-        }
-      };
-      fetchData();
-    }, []);
+
+  // Fetch all keys and services
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const keysResponse = await axios.get('/api/keys');
+        const servicesResponse = await axios.get('/api/services');
+        setKeys(keysResponse.data);
+        setServices(servicesResponse.data);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+      }
+    };
+    fetchData();
+  }, []);
+
   useEffect(() => {
     async function fetchExpiredKeys() {
       try {
         const response = await fetch("/api/expired_keys");
-  
         if (!response.ok) {
           if (response.status === 404) {
-            console.warn("API endpoint not found. Returning default value.");
             setExpiredKeyCount(0);
             return;
           }
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-  
         const data = await response.json();
         setExpiredKeyCount(Array.isArray(data) ? data.length : 0);
       } catch (error) {
-        console.error("Error fetching expired keys:", error);
         setExpiredKeyCount(0);
       }
     }
-  
     fetchExpiredKeys();
   }, []);
 
@@ -83,58 +80,43 @@ export default function Dashboard({ isAuthenticated }) {
     async function fetchActiveKeys() {
       try {
         const response = await fetch("/api/active_keys");
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         setActiveKeyCount(Array.isArray(data) ? data.length : 0);
       } catch (error) {
-        console.error("Error fetching active keys:", error);
-        setActiveKeyCount(0); // Default to 0 on error
+        setActiveKeyCount(0);
       }
     }
-
     fetchActiveKeys();
   }, []);
   
   useEffect(() => {
     async function fetchKeys() {
       try {
-        const response = await fetch("/api/total_keys"); // Ensure this endpoint is correct
+        const response = await fetch("/api/total_keys");
         const data = await response.json();
-        setKeyCount(data.total); // Use 'total' instead of 'length'
-      } catch (error) {
-        console.error("Error fetching keys:", error);
-      }
+        setKeyCount(data.total);
+      } catch (error) {}
     }
-  
     fetchKeys();
   }, []);
-  
 
-  // Fetch available services
   useEffect(() => {
     const fetchServices = async () => {
       try {
         const response = await axios.get('/api/services');
         setServices(response.data);
         if (response.data.length > 0) {
-          setServiceCategory(response.data[0].id); // Set the first service as default
+          setServiceCategory(response.data[0].id);
         }
-      } catch (err) {
-        console.error('Failed to fetch services:', err);
-      }
+      } catch (err) {}
     };
     fetchServices();
   }, []);
   
-
   const handleGenerateKey = async (e) => {
     e.preventDefault();
   
-    // Validate input fields
     if (!username || !timeValue || !serviceCategory) {
       setError("All fields are required!");
       toast.error("All fields are required!", { position: "top-right" });
@@ -142,23 +124,14 @@ export default function Dashboard({ isAuthenticated }) {
     }
   
     try {
-      // Calculate expiration date based on the selected time unit
       const expirationDate = new Date();
       switch (timeUnit) {
-        case "days":
-          expirationDate.setDate(expirationDate.getDate() + parseInt(timeValue));
-          break;
-        case "hours":
-          expirationDate.setHours(expirationDate.getHours() + parseInt(timeValue));
-          break;
-        case "minutes":
-          expirationDate.setMinutes(expirationDate.getMinutes() + parseInt(timeValue));
-          break;
-        default:
-          throw new Error("Invalid time unit");
+        case "days": expirationDate.setDate(expirationDate.getDate() + parseInt(timeValue)); break;
+        case "hours": expirationDate.setHours(expirationDate.getHours() + parseInt(timeValue)); break;
+        case "minutes": expirationDate.setMinutes(expirationDate.getMinutes() + parseInt(timeValue)); break;
+        default: throw new Error("Invalid time unit");
       }
   
-      // Send request to API
       const response = await axios.post("/api/generate-key", {
         username,
         expirationDate: expirationDate.toISOString(),
@@ -167,9 +140,8 @@ export default function Dashboard({ isAuthenticated }) {
   
       setKey(response.data.key);
       setError("");
-  
-      // Show success toast with the generated key
-      toast.success(`Key Generated: ${response.data.key}`, { position: "top-right", autoClose: false, });
+      toast.success(`Key Generated: ${response.data.key}`, { position: "top-right", autoClose: false });
+      setIsModalOpen(false); // close modal on success
     } catch (err) {
       const errorMessage = err.response?.data?.error || "Failed to generate key";
       setError(errorMessage);
@@ -177,349 +149,240 @@ export default function Dashboard({ isAuthenticated }) {
     }
   };
 
-  if (!isAuthenticated) {
-    return null; // or a loading spinner
-  }
-  
+  if (!isAuthenticated) return null;
 
   return (
-<div className="min-h-screen bg-gray-50/50">
-<Sidebar />
-{/*   <aside className="bg-gradient-to-br from-gray-800 to-gray-900 -translate-x-80 fixed inset-0 z-50 my-4 ml-4 h-[calc(100vh-32px)] w-72 rounded-xl transition-transform duration-300 xl:translate-x-0">
-    <div className="relative border-b border-white/20">
-      <a className="flex items-center gap-4 py-6 px-8" href="#/">
-        <h6 className="block antialiased tracking-normal font-sans text-base font-semibold leading-relaxed text-white">Material Tailwind Dashboard</h6>
-      </a>
-      <button className="middle none font-sans font-medium text-center uppercase transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none w-8 max-w-[32px] h-8 max-h-[32px] rounded-lg text-xs text-white hover:bg-white/10 active:bg-white/30 absolute right-0 top-0 grid rounded-br-none rounded-tl-none xl:hidden" type="button">
-        <span className="absolute top-1/2 left-1/2 transform -translate-y-1/2 -translate-x-1/2">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true" className="h-5 w-5 text-white">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </span>
-      </button>
-    </div>
-    <div className="m-4">
-      <ul className="mb-4 flex flex-col gap-1">
-        <li>
-          <a aria-current="page" className="active" href="#">
-            <button className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg bg-gradient-to-tr from-blue-600 to-blue-400 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85] w-full flex items-center gap-4 px-4 capitalize" type="button">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-inherit">
-                <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z"></path>
-                <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z"></path>
-              </svg>
-              <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">dashboard</p>
-            </button>
-          </a>
-        </li>
-        <li>
-          <a className="" href="#">
-            <button className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize" type="button">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-inherit">
-                <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd"></path>
-              </svg>
-              <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">profile</p>
-            </button>
-          </a>
-        </li>
-        <li>
-          <a className="" href="#">
-            <button className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize" type="button">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-inherit">
-                <path fill-rule="evenodd" d="M1.5 5.625c0-1.036.84-1.875 1.875-1.875h17.25c1.035 0 1.875.84 1.875 1.875v12.75c0 1.035-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 011.5 18.375V5.625zM21 9.375A.375.375 0 0020.625 9h-7.5a.375.375 0 00-.375.375v1.5c0 .207.168.375.375.375h7.5a.375.375 0 00.375-.375v-1.5zm0 3.75a.375.375 0 00-.375-.375h-7.5a.375.375 0 00-.375.375v1.5c0 .207.168.375.375.375h7.5a.375.375 0 00.375-.375v-1.5zm0 3.75a.375.375 0 00-.375-.375h-7.5a.375.375 0 00-.375.375v1.5c0 .207.168.375.375.375h7.5a.375.375 0 00.375-.375v-1.5zM10.875 18.75a.375.375 0 00.375-.375v-1.5a.375.375 0 00-.375-.375h-7.5a.375.375 0 00-.375.375v1.5c0 .207.168.375.375.375h7.5zM3.375 15h7.5a.375.375 0 00.375-.375v-1.5a.375.375 0 00-.375-.375h-7.5a.375.375 0 00-.375.375v1.5c0 .207.168.375.375.375zm0-3.75h7.5a.375.375 0 00.375-.375v-1.5A.375.375 0 0010.875 9h-7.5A.375.375 0 003 9.375v1.5c0 .207.168.375.375.375z" clip-rule="evenodd"></path>
-              </svg>
-              <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">tables</p>
-            </button>
-          </a>
-        </li>
-        <li>
-          <a className="" href="#">
-            <button className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize" type="button">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-inherit">
-                <path fill-rule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z" clip-rule="evenodd"></path>
-              </svg>
-              <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">notifactions</p>
-            </button>
-          </a>
-        </li>
-      </ul>
-      <ul className="mb-4 flex flex-col gap-1">
-        <li className="mx-3.5 mt-4 mb-2">
-          <p className="block antialiased font-sans text-sm leading-normal text-white font-black uppercase opacity-75">auth pages</p>
-        </li>
-        <li>
-          <a className="" href="#">
-            <button className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize" type="button">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-inherit">
-                <path fill-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V15a.75.75 0 011.5 0v3.75a3 3 0 01-3 3h-6a3 3 0 01-3-3V5.25a3 3 0 013-3h6a3 3 0 013 3V9A.75.75 0 0115 9V5.25a1.5 1.5 0 00-1.5-1.5h-6zm10.72 4.72a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H9a.75.75 0 010-1.5h10.94l-1.72-1.72a.75.75 0 010-1.06z" clip-rule="evenodd"></path>
-              </svg>
-              <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">sign in</p>
-            </button>
-          </a>
-        </li>
-        <li>
-          <a className="" href="#">
-            <button className="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize" type="button">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-inherit">
-                <path d="M6.25 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM3.25 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM19.75 7.5a.75.75 0 00-1.5 0v2.25H16a.75.75 0 000 1.5h2.25v2.25a.75.75 0 001.5 0v-2.25H22a.75.75 0 000-1.5h-2.25V7.5z"></path>
-              </svg>
-              <p className="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">sign up</p>
-            </button>
-          </a>
-        </li>
-      </ul>
-    </div>
-  </aside> */}
-  <div className="p-4 xl:ml-80">
-    <Nav />
-    <div className="mt-12">
-      <div className="mb-12 grid gap-y-10 gap-x-6 md:grid-cols-2 xl:grid-cols-4">
-      <Link href="/admin/keys">
-      <div className="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
-      <div className="bg-clip-border mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-blue-600 to-blue-400 text-white shadow-blue-500/40 shadow-lg absolute -mt-4 grid h-16 w-16 place-items-center">
-      <Icon icon="game-icons:house-keys" width="40" height="40" />
-      </div>
-      <div className="p-4 text-right">
-        <p className="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">
-          Total Keys
-        </p>
-        <h4 className="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">
-          {keyCount}
-        </h4>
-      </div>
-    </div>
-    </Link>
-    <Link href="/admin/keys">
-    <div className="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
-      <div className="bg-clip-border mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-green-600 to-green-400 text-white shadow-green-500/40 shadow-lg absolute -mt-4 grid h-16 w-16 place-items-center">
-      <Icon icon="bi:key-fill" width="40" height="40" />
-      </div>
-      <div className="p-4 text-right">
-        <p className="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">
-          Active Keys
-        </p>
-        <h4 className="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">
-          {activeKeyCount}
-        </h4>
-      </div>
-    </div>
-    </Link>
-    <Link href="/admin/expired-keys">
-    <div className="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
-      <div className="bg-clip-border mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-red-600 to-red-400 text-white shadow-red-500/40 shadow-lg absolute -mt-4 grid h-16 w-16 place-items-center">
-      <Icon icon="material-symbols-light:key-off-rounded" width="40" height="40" />
-      </div>
-      <div className="p-4 text-right">
-        <p className="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">
-          Expired Keys
-        </p>
-        <h4 className="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">
-          {expiredKeyCount}
-        </h4>
-      </div>
-    </div>
-    </Link>
-    <Link href="/admin/add-service">
-    <div className="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
-      <div className="bg-clip-border mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-orange-600 to-orange-400 text-white shadow-orange-500/40 shadow-lg absolute -mt-4 grid h-16 w-16 place-items-center">
-      <Icon icon="game-icons:network-bars" width="25" height="25" />
-      </div>
-      <div className="p-4 text-right">
-        <p className="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Total Services</p>
-        <h4 className="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">{totalServices}</h4>
-      </div>
-    </div>
-    </Link>
-      </div>
-      <ToastContainer /> {/* ✅ Place ToastContainer Here */}
-      <div className="mb-4 grid grid-cols-1 gap-6">
-  <div className="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md overflow-hidden xl:col-span-2">
-  <div className="relative bg-clip-border rounded-xl overflow-hidden bg-transparent text-gray-700 shadow-none m-0 flex items-center justify-between p-6">      
-      <div>
-        <h6 className="block antialiased tracking-normal font-sans text-base font-semibold leading-relaxed text-blue-gray-900 mb-1">
-          Latest Keys
-        </h6>
-      </div>
-
-      <button className="btn" onClick={() => document.getElementById("my_modal_3").showModal()}>
-        Generate New Key
-      </button>
-
-      <dialog id="my_modal_3" className="modal">
-        <div className="modal-box">
-          <form method="dialog">
-            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-              ✕
-            </button>
-          </form>
-          <div>
-            <h1 className="tracking-normal font-sans text-base font-semibold leading-relaxed text-blue-gray-900 mb-5">
-              Generate Key
-            </h1>
-            <form onSubmit={handleGenerateKey}>
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-                <input
-                  type="number"
-                  className="input"
-                  placeholder="Time"
-                  value={timeValue}
-                  onChange={(e) => setTimeValue(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <div className="radio-button-container mt-5">
-                  <div className="radio-button">
-                    <input
-                      value="days"
-                      checked={timeUnit === "days"}
-                      onChange={() => setTimeUnit("days")}
-                      type="radio"
-                      className="radio-button__input"
-                      id="radio1"
-                      name="radio-group"
-                    />
-                    <label className="radio-button__label text-gray-400" htmlFor="radio1">
-                      <span className="radio-button__custom"></span>
-                      Days
-                    </label>
-                  </div>
-                  <div className="radio-button">
-                    <input
-                      value="hours"
-                      checked={timeUnit === "hours"}
-                      onChange={() => setTimeUnit("hours")}
-                      type="radio"
-                      className="radio-button__input"
-                      id="radio2"
-                      name="radio-group"
-                    />
-                    <label className="radio-button__label text-gray-400" htmlFor="radio2">
-                      <span className="radio-button__custom"></span>
-                      Hours
-                    </label>
-                  </div>
-                  <div className="radio-button">
-                    <input
-                      value="minutes"
-                      checked={timeUnit === "minutes"}
-                      onChange={() => setTimeUnit("minutes")}
-                      type="radio"
-                      className="radio-button__input"
-                      id="radio3"
-                      name="radio-group"
-                    />
-                    <label className="radio-button__label text-gray-400" htmlFor="radio3">
-                      <span className="radio-button__custom"></span>
-                      Minutes
-                    </label>
-                  </div>
+    <div className="min-h-screen bg-background relative overflow-hidden font-sans">
+      {/* Background blobs for premium effect */}
+      <div className="blob bg-primary-500 w-96 h-96 top-0 left-10"></div>
+      <div className="blob bg-purple-500 w-96 h-96 bottom-0 right-10 animation-delay-2000"></div>
+      
+      <Sidebar />
+      
+      <div className="p-4 xl:ml-[310px] relative z-10 transition-all duration-300">
+        <Nav />
+        <ToastContainer theme="dark" toastClassName="glass-panel" />
+        
+        <div className="mt-8">
+          {/* Stat Cards */}
+          <div className="mb-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <Link href="/admin/keys">
+              <div className="glass-card p-6 flex items-center justify-between group cursor-pointer h-full">
+                <div>
+                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Total Keys</p>
+                  <h4 className="text-3xl font-bold text-white group-hover:text-primary-400 transition-colors">{keyCount}</h4>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary-500/20 to-primary-600/20 border border-primary-500/30 flex items-center justify-center text-primary-400 shadow-[0_0_15px_rgba(99,102,241,0.2)] group-hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] transition-all">
+                  <Icon icon="lucide:key" width="28" height="28" />
                 </div>
               </div>
+            </Link>
 
-              <label htmlFor="countries" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-400">
-                Select an option
-              </label>
-              <select
-                value={serviceCategory}
-                onChange={(e) => setServiceCategory(e.target.value)}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                required
-              >
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
-                  </option>
-                ))}
-              </select>
-              <div className="w-full">
-                <button
-                  className="bg-green-400 py-[12px] px-[12px] bg-clip-border rounded-lg overflow-hidden bg-gradient-to-tr from-green-600 to-green-400 text-white shadow-green-500/40 shadow-lg w-full mt-4 text-[20px]"
-                  type="submit"
-                >
-                  Generate Key
-                </button>
+            <Link href="/admin/keys">
+              <div className="glass-card p-6 flex items-center justify-between group cursor-pointer h-full">
+                <div>
+                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Active Keys</p>
+                  <h4 className="text-3xl font-bold text-white group-hover:text-emerald-400 transition-colors">{activeKeyCount}</h4>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)] group-hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all">
+                  <Icon icon="lucide:shield-check" width="28" height="28" />
+                </div>
               </div>
-            </form>
-{/*             {key && (
+            </Link>
+
+            <Link href="/admin/expired-keys">
+              <div className="glass-card p-6 flex items-center justify-between group cursor-pointer h-full">
+                <div>
+                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Expired Keys</p>
+                  <h4 className="text-3xl font-bold text-white group-hover:text-rose-400 transition-colors">{expiredKeyCount}</h4>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-500/20 to-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.2)] group-hover:shadow-[0_0_25px_rgba(244,63,94,0.5)] transition-all">
+                  <Icon icon="lucide:shield-alert" width="28" height="28" />
+                </div>
+              </div>
+            </Link>
+
+            <Link href="/admin/add-service">
+              <div className="glass-card p-6 flex items-center justify-between group cursor-pointer h-full">
+                <div>
+                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Total Services</p>
+                  <h4 className="text-3xl font-bold text-white group-hover:text-amber-400 transition-colors">{totalServices}</h4>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-amber-600/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)] group-hover:shadow-[0_0_25px_rgba(245,158,11,0.5)] transition-all">
+                  <Icon icon="lucide:briefcase" width="28" height="28" />
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* Main Action Area & Table */}
+          <div className="glass-panel rounded-3xl overflow-hidden flex flex-col border border-white/5 shadow-2xl">
+            <div className="p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">      
               <div>
-                <h2>Generated Key:</h2>
-                <p>{key}</p>
+                <h6 className="text-lg font-semibold text-white">Latest Keys generated</h6>
+                <p className="text-sm text-gray-400 mt-1">Overview of the most recently created dashboard keys</p>
               </div>
-            )} */}
-{/*             {error && <p style={{ color: "red" }}>{error}</p>} */}
+
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="group relative overflow-hidden bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl py-2.5 px-6 transition-all duration-300 shadow-[0_0_15px_rgba(99,102,241,0.4)] flex items-center gap-2"
+              >
+                <Icon icon="lucide:plus" width="20" height="20" />
+                <span>Generate Key</span>
+              </button>
+            </div>
+
+            {/* Custom Modal replacing daisyUI dialog */}
+            {isModalOpen && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+                <div className="glass-card max-w-lg w-full p-8 border border-white/10 relative animate-slide-up bg-background">
+                  <button 
+                    onClick={() => setIsModalOpen(false)} 
+                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                  >
+                    <Icon icon="lucide:x" width="24" height="24" />
+                  </button>
+                  
+                  <h2 className="text-2xl font-bold text-white mb-6">Generate New Key</h2>
+                  
+                  <form onSubmit={handleGenerateKey} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          placeholder="johndoe"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                         <label className="block text-sm font-medium text-gray-300 mb-2">Duration</label>
+                         <input
+                          type="number"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          placeholder="Amount"
+                          value={timeValue}
+                          onChange={(e) => setTimeValue(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Time Unit</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {['days', 'hours', 'minutes'].map((unit) => (
+                           <label 
+                             key={unit} 
+                             className={`cursor-pointer rounded-xl border text-center py-2.5 transition-all ${timeUnit === unit ? 'bg-primary-500/20 border-primary-500 text-primary-400 shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                           >
+                             <input
+                                type="radio"
+                                name="timeUnit"
+                                value={unit}
+                                checked={timeUnit === unit}
+                                onChange={() => setTimeUnit(unit)}
+                                className="hidden"
+                              />
+                              <span className="capitalize font-medium">{unit}</span>
+                           </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Service Platform</label>
+                      <select
+                        value={serviceCategory}
+                        onChange={(e) => setServiceCategory(e.target.value)}
+                        className="w-full bg-[#1e2532] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none"
+                        required
+                      >
+                        {services.map((service) => (
+                          <option key={service.id} value={service.id}>
+                            {service.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      className="w-full bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl py-3.5 mt-2 transition-all duration-300 shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] flex justify-center items-center gap-2"
+                      type="submit"
+                    >
+                      <Icon icon="lucide:key" width="20" height="20" /> Generate 
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-max table-auto text-left whitespace-nowrap">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10 hidden sm:table-row">
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Key Identifier</th>
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Username</th>
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Service Category</th>
+                    <th className="p-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Expiration Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 block sm:table-row-group">
+                {keys.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate)).slice(0, 5).map((key) => (
+                    <tr key={key.id} className="hover:bg-white/[0.02] transition-colors block sm:table-row border-b sm:border-b-0 border-white/10 mb-4 sm:mb-0">
+                      <td className="p-4 block sm:table-cell">
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Key:</span>
+                         <span className="font-mono text-sm text-indigo-300 bg-indigo-500/10 py-1.5 px-3 rounded-lg border border-indigo-500/20">{key.id}</span>
+                      </td>
+                      <td className="p-4 block sm:table-cell">
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">User:</span>
+                         <span className="text-gray-300 font-medium">{key.username}</span>
+                      </td>
+                      <td className="p-4 block sm:table-cell">
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Service:</span>
+                         <span className="text-sm font-semibold bg-white/10 px-3 py-1 rounded-full text-white">{key.serviceCategory}</span>
+                      </td>
+                      <td className="p-4 block sm:table-cell">
+                         <span className="inline-block sm:hidden text-xs font-bold uppercase text-gray-500 mr-2">Expires:</span>
+                         <span className="text-gray-400 text-sm">{new Date(key.expirationDate).toLocaleString(undefined, {
+                           year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                         })}</span>
+                      </td>
+                    </tr>
+                  ))}
+                  {keys.length === 0 && (
+                     <tr>
+                        <td colSpan="4" className="p-10 text-center text-gray-500">
+                           <Icon icon="lucide:inbox" className="mx-auto mb-3 opacity-50" width="40" height="40" />
+                           <p>No keys generated recently.</p>
+                        </td>
+                     </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </dialog>
+        
+        <footer className="py-8 mt-4 border-t border-white/10 text-center text-sm text-gray-500">
+          <p>© {new Date().getFullYear()}, Designed with precision for PC Engineer.</p>
+        </footer>
+      </div>
     </div>
-    <div className="p-6 overflow-x-scroll px-0 pt-0 pb-2">
-      <table className="w-full min-w-[640px] table-auto">
-        <thead>
-          <tr>
-            <th className="border-b border-blue-gray-50 py-3 px-6 text-left">
-              <p className="block antialiased font-sans text-[11px] font-medium uppercase text-blue-gray-400">Key</p>
-            </th>
-            <th className="border-b border-blue-gray-50 py-3 px-6 text-left">
-              <p className="block antialiased font-sans text-[11px] font-medium uppercase text-blue-gray-400">Username</p>
-            </th>
-            <th className="border-b border-blue-gray-50 py-3 px-6 text-left">
-              <p className="block antialiased font-sans text-[11px] font-medium uppercase text-blue-gray-400">Category Name</p>
-            </th>
-            <th className="border-b border-blue-gray-50 py-3 px-6 text-left">
-              <p className="block antialiased font-sans text-[11px] font-medium uppercase text-blue-gray-400">Expiration Date</p>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-        {keys.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate)).slice(0, 5).map((key) => (
-            <tr key={key.id}>
-              <td className="py-3 px-5 border-b border-blue-gray-50">
-                <p className="block antialiased font-sans text-sm leading-normal text-blue-gray-900 font-bold">{key.id}</p>
-              </td>
-              <td className="py-3 px-5 border-b border-blue-gray-50">
-                <p className="block antialiased font-sans text-sm leading-normal text-blue-gray-600">{key.username}</p>
-              </td>
-              <td className="py-3 px-5 border-b border-blue-gray-50">
-                <p className="block antialiased font-sans text-sm leading-normal text-blue-gray-600">{key.serviceCategory}</p>
-              </td>
-              <td className="py-3 px-5 border-b border-blue-gray-50">
-                <p className="block antialiased font-sans text-sm leading-normal text-blue-gray-600">{new Date(key.expirationDate).toLocaleString()}</p>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-    </div>
-    <div className="text-blue-gray-600">
-      <footer className="py-2">
-        <div className="flex w-full flex-wrap items-center justify-center gap-6 px-2 md:justify-between">
-          <p className="block antialiased font-sans text-sm leading-normal font-normal text-inherit">© 2025, made with by <a href="https://www.jozef.site" target="_blank" className="transition-colors hover:text-blue-500">Jozef</a> for PC Engneer. </p>
-        </div>
-      </footer>
-    </div>
-  </div>
-</div>
   );
 }
+
 export async function getServerSideProps(context) {
   const { req } = context;
-  const isLoggedIn = req.cookies.isLoggedIn; // Check if the user is logged in
+  const isLoggedIn = req.cookies.isLoggedIn; 
 
   if (!isLoggedIn) {
     return {
       redirect: {
-        destination: "/", // Redirect to login page if not logged in
+        destination: "/", 
         permanent: false,
       },
     };
