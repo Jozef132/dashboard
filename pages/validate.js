@@ -36,7 +36,6 @@ export default function ValidateKey() {
 
         startCountdown(totalSeconds);
       }
-      document.getElementById("my_modal_3").showModal();
     } catch (err) {
       console.error('Validation Error:', err);
       const msg = err.response?.data?.error || err.message || 'Failed to validate key';
