@@ -12,6 +12,8 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
   const [expiredKeys, setExpiredKeys] = useState([]);
   const [services, setServices] = useState([]);
   const [filterCategory, setFilterCategory] = useState("all");
+  const [selectedKey, setSelectedKey] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,6 +57,11 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
     } catch (err) {
       toast.error("Failed to refresh keys", { position: "top-right" });
     }
+  };
+
+  const handleViewDetails = (key) => {
+    setSelectedKey(key);
+    setIsModalOpen(true);
   };
 
   const handleRestoreKey = async (keyId) => {
@@ -186,6 +193,13 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
+                          className="bg-primary-500/10 text-primary-400 hover:bg-primary-500 hover:text-white border border-primary-500/20 p-2 rounded-lg transition-colors"
+                          onClick={() => handleViewDetails(key)}
+                          title="View Details"
+                        >
+                          <Icon icon="lucide:info" width="18" height="18" />
+                        </button>
+                        <button
                           className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 p-2 rounded-lg transition-colors"
                           onClick={() => handleRestoreKey(key.id)}
                           title="Restore"
@@ -216,6 +230,67 @@ export default function ExpiredKeysPage({ isAuthenticated }) {
           </div>
         </div>
       </div>
+
+      {/* Info Modal */}
+      {isModalOpen && selectedKey && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="glass-card max-w-lg w-full p-8 border border-white/10 relative animate-slide-up bg-[#0b0f19] shadow-2xl">
+            <button 
+              onClick={() => setIsModalOpen(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <Icon icon="lucide:x" width="24" height="24" />
+            </button>
+            <h2 className="text-2xl font-bold text-white mb-6">Subscription Details</h2>
+            
+            <div className="space-y-4 mb-2 text-gray-300 max-h-[60vh] overflow-y-auto no-scrollbar pr-2">
+              <div className="flex flex-col border-b border-white/5 pb-3">
+                <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Reference Number</span>
+                <span className="font-mono text-primary-400 text-sm">{selectedKey.id}</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-3">
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Email</span>
+                  <span className="text-sm font-medium">{selectedKey.email || selectedKey.username || 'N/A'}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Password</span>
+                  <span className="text-sm font-medium">{selectedKey.password || 'N/A'}</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-3">
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Discord</span>
+                  <span className="text-sm font-medium">{selectedKey.discordUsername || 'N/A'}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Phone</span>
+                  <span className="text-sm font-medium">{selectedKey.phoneNumber || 'N/A'}</span>
+                </div>
+              </div>
+              
+              <div className="flex flex-col border-b border-white/5 pb-3">
+                <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Service Platform</span>
+                <span className="text-sm font-medium">{selectedKey.serviceCategory}</span>
+              </div>
+              
+              <div className="flex flex-col border-b border-white/5 pb-3">
+                <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Expiration Status</span>
+                <span className="text-sm font-medium text-rose-400">Expired on {new Date(selectedKey.expirationDate).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <button
+               onClick={() => setIsModalOpen(false)}
+               className="w-full mt-6 py-3 px-4 bg-primary-600 font-bold text-white rounded-xl hover:bg-primary-500 transition-all flex justify-center items-center gap-2"
+            >
+              Close Details
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

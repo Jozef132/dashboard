@@ -204,14 +204,38 @@ export default function KeysPage({ isAuthenticated }) {
             </button>
             <h2 className="text-2xl font-bold text-white mb-6">Subscription Details</h2>
             
-            <div className="space-y-4 mb-6 text-gray-300">
+            <div className="space-y-4 mb-6 text-gray-300 max-h-[60vh] overflow-y-auto no-scrollbar pr-2">
               <div className="flex flex-col border-b border-white/5 pb-3">
                 <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Reference Number</span>
                 <span className="font-mono text-primary-400 text-sm">{selectedKey.id}</span>
               </div>
+              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-3">
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Email</span>
+                  <span className="text-sm font-medium">{selectedKey.email || selectedKey.username || 'N/A'}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Password</span>
+                  <span className="text-sm font-medium">{selectedKey.password || '••••••••'}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-3">
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Discord</span>
+                  <span className="text-sm font-medium">{selectedKey.discordUsername || 'N/A'}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Phone</span>
+                  <span className="text-sm font-medium">{selectedKey.phoneNumber || 'N/A'}</span>
+                </div>
+              </div>
+              <div className="flex flex-col border-b border-white/5 pb-3">
+                <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Service Platform</span>
+                <span className="text-sm font-medium">{selectedKey.serviceCategory}</span>
+              </div>
               <div className="flex flex-col border-b border-white/5 pb-3">
                 <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Current Expiration</span>
-                <span>{new Date(selectedKey.expirationDate).toLocaleString()}</span>
+                <span className="text-sm font-medium">{new Date(selectedKey.expirationDate).toLocaleString()}</span>
               </div>
             </div>
 

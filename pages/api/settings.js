@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     try {
       const doc = await db.collection('settings').doc('discord').get();
       if (!doc.exists) {
-        return res.status(200).json({ webhookUrl: '' });
+        return res.status(200).json({ webhookUrl: '', webhookUrlExpiration: '' });
       }
       return res.status(200).json(doc.data());
     } catch (err) {
@@ -36,8 +36,12 @@ export default async function handler(req, res) {
     }
   } else if (req.method === 'POST') {
     try {
-      const { webhookUrl } = req.body;
-      await db.collection('settings').doc('discord').set({ webhookUrl }, { merge: true });
+      const { webhookUrl, webhookUrlExpiration } = req.body;
+      const dataToSave = {};
+      if (webhookUrl !== undefined) dataToSave.webhookUrl = webhookUrl;
+      if (webhookUrlExpiration !== undefined) dataToSave.webhookUrlExpiration = webhookUrlExpiration;
+      
+      await db.collection('settings').doc('discord').set(dataToSave, { merge: true });
       return res.status(200).json({ message: 'Settings saved successfully' });
     } catch (err) {
       console.error(err);

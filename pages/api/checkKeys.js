@@ -34,8 +34,8 @@ export default async function handler(req, res) {
     // Fetch Discord Webhook URL from settings
     let webhookUrl = null;
     const settingsDoc = await db.collection('settings').doc('discord').get();
-    if (settingsDoc.exists && settingsDoc.data().webhookUrl) {
-      webhookUrl = settingsDoc.data().webhookUrl;
+    if (settingsDoc.exists && settingsDoc.data().webhookUrlExpiration) {
+      webhookUrl = settingsDoc.data().webhookUrlExpiration;
     }
 
     const now = new Date();

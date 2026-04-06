@@ -10,6 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function SettingsPage({ isAuthenticated }) {
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookUrlExpiration, setWebhookUrlExpiration] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -24,6 +25,9 @@ export default function SettingsPage({ isAuthenticated }) {
         if (response.data.webhookUrl) {
           setWebhookUrl(response.data.webhookUrl);
         }
+        if (response.data.webhookUrlExpiration) {
+          setWebhookUrlExpiration(response.data.webhookUrlExpiration);
+        }
       } catch (err) {
         toast.error("Failed to fetch settings", { position: "top-right" });
       }
@@ -35,8 +39,8 @@ export default function SettingsPage({ isAuthenticated }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await axios.post("/api/settings", { webhookUrl });
-      toast.success("Webhook URL saved successfully!", { position: "top-right" });
+      await axios.post("/api/settings", { webhookUrl, webhookUrlExpiration });
+      toast.success("Settings saved successfully!", { position: "top-right" });
     } catch (err) {
       toast.error("Failed to save settings", { position: "top-right" });
     } finally {
@@ -79,10 +83,10 @@ export default function SettingsPage({ isAuthenticated }) {
 
              <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl">
                 <div>
-                   <label className="block text-sm font-medium text-gray-300 mb-2">Webhook URL</label>
+                   <label className="block text-sm font-medium text-gray-300 mb-2">Creation Webhook URL</label>
                    <div className="relative group">
                      <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-500">
-                       <Icon icon="lucide:link" width="20" height="20" />
+                       <Icon icon="lucide:plus-circle" width="20" height="20" />
                      </div>
                      <input
                        type="url"
@@ -92,6 +96,24 @@ export default function SettingsPage({ isAuthenticated }) {
                        className="w-full bg-black/30 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                      />
                    </div>
+                   <p className="text-xs text-gray-500 mt-1">Used for new subscription notifications</p>
+                </div>
+
+                <div>
+                   <label className="block text-sm font-medium text-gray-300 mb-2">Expiration Webhook URL</label>
+                   <div className="relative group">
+                     <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-500">
+                       <Icon icon="lucide:alert-triangle" width="20" height="20" />
+                     </div>
+                     <input
+                       type="url"
+                       placeholder="https://discord.com/api/webhooks/..."
+                       value={webhookUrlExpiration}
+                       onChange={(e) => setWebhookUrlExpiration(e.target.value)}
+                       className="w-full bg-black/30 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                     />
+                   </div>
+                   <p className="text-xs text-gray-500 mt-1">Used for expired subscription alerts</p>
                 </div>
                 
                 <button
