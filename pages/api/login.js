@@ -5,7 +5,7 @@ export default function handler(req, res) {
 
   // Hardcoded admin credentials (replace with a proper auth system in production)
   const ADMIN_USERNAME = 'admin';
-  const ADMIN_PASSWORD = 'password';
+  const ADMIN_PASSWORD = '74l6p43h!M0D#EQb$';
 
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
     // Set a cookie to indicate the user is logged in
